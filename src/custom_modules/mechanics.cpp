@@ -83,7 +83,8 @@ void parietal_epithelial_mechanics( Cell* pCell, Phenotype& phenotype, double dt
     dvec[1] = 0.0; 
     dvec[2] = -1.0; //  rwh: 3D model
     
-    cell_defaults.phenotype.motility.migration_bias_direction.assign({ 0.,0., -1.} ); //rwh
+    // cell_defaults.phenotype.motility.migration_bias_direction.assign({ 0.,0., -1.} ); //rwh
+    // pCell->phenotype.motility.migration_bias_direction.assign({ 0.,0., -1.} ); //rwh
 
     // if the update_bias_vector function is set, use it  
     if( pCell->functions.update_migration_bias )

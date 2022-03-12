@@ -1,0 +1,6 @@
+#!/bin/sh
+
+/usr/bin/invoke_app "$@" -t pc4membrane3D \
+                         -C "python @tool/bin/studio.py" \
+                         -u vtk-8.2.0 \
+                         -u pyqt5-5.10.1 -r none
