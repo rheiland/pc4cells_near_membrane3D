@@ -124,7 +124,9 @@ class Vis(QWidget):
         nres = 20
         self.sphereSource.SetPhiResolution(nres)
         self.sphereSource.SetThetaResolution(nres)
-        self.sphereSource.SetRadius(0.1)
+        # self.sphereSource.SetRadius(0.02)
+        # self.sphereSource.SetRadius(2.6)  # rwh ??
+        self.sphereSource.SetRadius(8.412)  # rwh ??
         self.glyph = vtkGlyph3D()
         self.cells_mapper = vtkPolyDataMapper()
         self.cells_mapper.SetInputConnection(self.glyph.GetOutputPort())
@@ -220,7 +222,7 @@ class Vis(QWidget):
         self.create_figure(False)
 
         # self.ren.AddActor(self.cyl_actor)
-        self.ren.AddActor(self.plane_actor)
+        # self.ren.AddActor(self.plane_actor)
         self.ren.AddActor(self.box_actor)
         self.ren.AddActor(self.cells_actor)
 
@@ -606,9 +608,9 @@ class Vis(QWidget):
         # svg_files.sort()
         mat_files = glob.glob('output*_cells_physicell.mat')
         mat_files.sort()
-        print("mat_files: ",mat_files)
+        # print("mat_files: ",mat_files)
 
-        print('xml_files = ',xml_files)
+        # print('xml_files = ',xml_files)
         num_xml = len(xml_files)
 
         # print('svg_files = ',svg_files)
@@ -866,6 +868,7 @@ class Vis(QWidget):
         print(mcds.data['discrete_cells'].keys())
 
         ncells = len(mcds.data['discrete_cells']['ID'])
+        print('total_volume= ',mcds.data['discrete_cells']['total_volume'])
         print('ncells=', ncells)
 
         # global xyz
@@ -957,7 +960,7 @@ class Vis(QWidget):
 
         # using these 2 results in fixed size spheres
         self.glyph.SetScaleModeToDataScalingOff()  # results in super tiny spheres without 'ScaleFactor'
-        self.glyph.SetScaleFactor(170)  # overall (multiplicative) scaling factor
+        # self.glyph.SetScaleFactor(170)  # overall (multiplicative) scaling factor
 
         # glyph.SetScaleModeToDataScalingOn()
         # glyph.ScalingOn()
