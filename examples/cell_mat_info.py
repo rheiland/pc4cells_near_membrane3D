@@ -12,7 +12,9 @@ print('time=', mcds.get_time())
 print(mcds.data['discrete_cells'].keys())
 
 ncells = len(mcds.data['discrete_cells']['ID'])
-print('total_volume= ',mcds.data['discrete_cells']['total_volume'])
+#print('total_volume= ',mcds.data['discrete_cells']['total_volume'])
+print('total_volume= ',mcds.data['discrete_cells']['total_volume'][0:6])
+print('ID= ',mcds.data['discrete_cells']['ID'])
 print('ncells=', ncells)
 
 # global xyz
@@ -20,6 +22,11 @@ xyz = np.zeros((ncells, 3))
 xyz[:, 0] = mcds.data['discrete_cells']['position_x']
 xyz[:, 1] = mcds.data['discrete_cells']['position_y']
 xyz[:, 2] = mcds.data['discrete_cells']['position_z']
+cellID = mcds.data['discrete_cells']['cell_ID']
+
+print("min(cellID) = ",min(cellID))
+print("max(cellID) = ",max(cellID))
+
 #xyz = xyz[:1000]
 # print("position_x = ",xyz[:,0])
 xmin = min(xyz[:,0])
