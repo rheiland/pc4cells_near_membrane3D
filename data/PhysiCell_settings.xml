@@ -191,14 +191,5 @@
         <number_of_cells type="int" units="none" description="initial number of cells (for each cell type)">0</number_of_cells>
         <R_a type="double" units="micron" description="adhesion radius (to membrane)">1.0</R_a>
         <mechanics_voxel_size type="double" units="micron" description="edge length of mechanics voxel. Set ~2 x agent radius x max relative interaction distance (default: 30)">30</mechanics_voxel_size>
-        <cell_cell_adhesion_strength type="double" units="none" description="Cell-cell Adhesion Strength">0.0</cell_cell_adhesion_strength>
-        <cell_cell_repulsion_strength type="double" units="none" description="Cell-cell Repulsion Strength">10.0</cell_cell_repulsion_strength>
-        <relative_maximum_adhesion_distance type="double" units="relative multiplier" description="Maximum adhesion strength between cells">1.25</relative_maximum_adhesion_distance>
-        <use_function_to_set_relative_maximum_adhesion_distance type="bool" units="" description="True, if you would like to use relative adhesion distance">false</use_function_to_set_relative_maximum_adhesion_distance>
-        <set_relative_maximum_adhesion_distance type="double" units="relative multiplier" description="Relative adhesion distance to cell radius">2.0</set_relative_maximum_adhesion_distance>
-        <use_function_to_set_relative_equilibrium_distance type="bool" units="" description="True, if you would like to set relative equilibrium distance">false</use_function_to_set_relative_equilibrium_distance>
-        <set_relative_equilibrium_distance type="double" units="relative multiplier" description="Relative equilibrium distance to cell radius">2.0</set_relative_equilibrium_distance>
-        <use_function_to_set_absolute_equilibrium_distance type="bool" units="" description="True, if you would like to set absolute equilibrium distance">false</use_function_to_set_absolute_equilibrium_distance>
-        <set_absolute_equilibrium_distance type="double" units="micron" description="Absolute equilibrium distance. ">2.0</set_absolute_equilibrium_distance>
     </user_parameters>
 </PhysiCell_settings>

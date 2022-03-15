@@ -20,7 +20,7 @@
 		<dt_phenotype units="min">6</dt_phenotype>
 	</overall>
 	<parallel>
-		<omp_num_threads>2</omp_num_threads>
+		<omp_num_threads>1</omp_num_threads>
 	</parallel>
 	<save>
 		<folder>.</folder>
@@ -113,7 +113,7 @@
           </death>
 
           <volume>
-            <total>2494</total>
+            <total>75.76</total>
             <fluid_fraction>0.75</fluid_fraction>
             <nuclear>0</nuclear>
             <fluid_change_rate>0.05</fluid_change_rate>
