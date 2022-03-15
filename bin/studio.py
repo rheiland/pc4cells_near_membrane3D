@@ -240,8 +240,10 @@ class PhysiCellXMLCreator(QWidget):
 
         #--------------
         file_menu = menubar.addMenu('&Model')
-
         file_menu.addAction("Save as mymodel.xml", self.save_as_cb)
+
+        view_menu = menubar.addMenu('&View')
+        view_menu.addAction("Toggle domain box", self.toggle_domain_box)
 
         menubar.adjustSize()  # Argh. Otherwise, only 1st menu appears, with ">>" to others!
 
@@ -366,6 +368,9 @@ class PhysiCellXMLCreator(QWidget):
         save_as_file = "mymodel.xml"
         print("studio.py:  save_as_cb: writing to: ",save_as_file) # writing to:  ('/Users/heiland/git/PhysiCell-model-builder/rwh.xml', 'All Files (*)')
         self.tree.write(save_as_file)
+
+    def toggle_domain_box(self):
+        self.vis_tab.toggle_domain_box()
 
     def indent(elem, level=0):
         i = "\n" + level*"  "

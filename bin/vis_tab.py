@@ -223,6 +223,7 @@ class Vis(QWidget):
 
         # self.ren.AddActor(self.cyl_actor)
         # self.ren.AddActor(self.plane_actor)
+        self.show_domain_box = True
         self.ren.AddActor(self.box_actor)
         self.ren.AddActor(self.cells_actor)
 
@@ -384,6 +385,15 @@ class Vis(QWidget):
 
         # self.create_figure()
 
+
+    def toggle_domain_box(self):
+        self.show_domain_box = not self.show_domain_box
+        if self.show_domain_box:
+            # self.ren.AddActor(self.box_actor)
+            self.box_actor.VisibilityOn()
+        else:
+            # self.ren.RemoveActor(self.box_actor)
+            self.box_actor.VisibilityOff()
 
     def reset_plot_range(self):
         try:  # due to the initial callback
@@ -893,11 +903,14 @@ class Vis(QWidget):
         print("zmin = ",zmin)
         print("zmax = ",zmax)
 
-        cell_type = mcds.data['discrete_cells']['cell_type']
-        # print(type(cell_type))
-        # print(cell_type)
-        unique_cell_type = np.unique(cell_type)
-        print("\nunique_cell_type = ",unique_cell_type )
+        # cell_type = mcds.data['discrete_cells']['cell_type']
+        cell_custom_ID = mcds.data['discrete_cells']['cell_ID']
+        # # print(type(cell_type))
+        # # print(cell_type)
+        # unique_cell_type = np.unique(cell_type)
+        unique_cell_custom_ID = np.unique(cell_custom_ID)
+        # print("\nunique_cell_type = ",unique_cell_type )
+        # print("\nunique_cell_custom_ID = ",unique_cell_custom_ID )
 
         #------------
         # colors = vtkNamedColors()
@@ -912,10 +925,17 @@ class Vis(QWidget):
             x= mcds.data['discrete_cells']['position_x'][idx]
             y= mcds.data['discrete_cells']['position_y'][idx]
             z= mcds.data['discrete_cells']['position_z'][idx]
-            id = mcds.data['discrete_cells']['cell_type'][idx]
+            # id = mcds.data['discrete_cells']['cell_type'][idx]
+            id = mcds.data['discrete_cells']['cell_ID'][idx]
             self.points.InsertNextPoint(x, y, z)
             # cellVolume.InsertNextValue(30.0)
             self.cellID.InsertNextValue(id)
+
+        print("min (parent)cell_ID = ",min(mcds.data['discrete_cells']['cell_ID']))
+        print("max (parent)cell_ID = ",max(mcds.data['discrete_cells']['cell_ID']))
+        cell_flavor = mcds.data['discrete_cells']['cell_ID']
+        # unique_cell_flavor = np.unique(cell_flavor)
+        # print("\nunique_cell_flavor = ",unique_cell_flavor )
 
         # self.polydata = vtkPolyData()
         self.polydata.SetPoints(self.points)
@@ -925,7 +945,8 @@ class Vis(QWidget):
         cellID_color_dict = {}
         # for idx in range(ncells):
         random.seed(42)
-        for utype in unique_cell_type:
+        # for utype in unique_cell_type:
+        for utype in unique_cell_custom_ID:
             # colors.InsertTuple3(0, randint(0,255), randint(0,255), randint(0,255)) # reddish
             cellID_color_dict[utype] = [random.randint(0,255), random.randint(0,255), random.randint(0,255)]
         # cellID_color_dict[0.0]=[255,255,0]  # yellow basement membrane
@@ -942,7 +963,8 @@ class Vis(QWidget):
             # colors.InsertTuple3(idx, randint(0,255), randint(0,255), randint(0,255)) 
             # if idx < 5:
                 # print(idx,cellID_color_dict[cell_type[idx]])
-            self.colors.InsertTuple3(idx, cellID_color_dict[cell_type[idx]][0], cellID_color_dict[cell_type[idx]][1], cellID_color_dict[cell_type[idx]][2])
+            # self.colors.InsertTuple3(idx, cellID_color_dict[cell_type[idx]][0], cellID_color_dict[cell_type[idx]][1], cellID_color_dict[cell_type[idx]][2])
+            self.colors.InsertTuple3(idx, cellID_color_dict[cell_custom_ID[idx]][0], cellID_color_dict[cell_custom_ID[idx]][1], cellID_color_dict[cell_custom_ID[idx]][2])
 
         self.polydata.GetPointData().SetScalars(self.colors)
 
