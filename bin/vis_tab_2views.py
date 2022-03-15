@@ -221,8 +221,9 @@ class Vis(QWidget):
         # self.ren.AddActor(self.cyl_actor)
         # self.ren.AddActor(self.plane_actor)
         self.show_domain_box = True
-        self.ren.AddActor(self.box_actor)
-        self.ren.AddActor(self.cells_actor)
+        self.ren0.AddActor(self.box_actor)
+        self.ren0.AddActor(self.cells_actor)
+        self.ren0.SetBackground(0.1,0,0)
 
 
         self.config_params = QWidget()
@@ -720,13 +721,17 @@ class Vis(QWidget):
         self.canvas = QWidget()
         self.vl = QVBoxLayout(self.canvas)
 
-        self.ren = vtkRenderer()
-        self.ren.SetViewport(self.vp_xmins[0], self.vp_ymins[0], self.vp_xmaxs[0], self.vp_ymaxs[0])
+        self.ren0 = vtkRenderer()
+        self.ren0.SetViewport(self.vp_xmins[0], self.vp_ymins[0], self.vp_xmaxs[0], self.vp_ymaxs[0])
+
+        self.ren1 = vtkRenderer()
+        self.ren1.SetViewport(self.vp_xmins[1], self.vp_ymins[1], self.vp_xmaxs[1], self.vp_ymaxs[1])
 
         self.vtkWidget = QVTKRenderWindowInteractor(self.canvas)
         self.vl.addWidget(self.vtkWidget)
 
-        self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
+        self.vtkWidget.GetRenderWindow().AddRenderer(self.ren0)
+        self.vtkWidget.GetRenderWindow().AddRenderer(self.ren1)
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
         self.show()
         self.iren.Initialize()
@@ -744,7 +749,7 @@ class Vis(QWidget):
         print("os.getcwd() = ",os.getcwd())
         self.plot_cells3Dv1(frame)
         # self.plot_cells3Dv2(frame)
-        
+
     #------------------------------------------------------------
     # def plot_svg(self, frame, rdel=''):
     def plot_cells3Dv1(self, frame):
@@ -892,7 +897,158 @@ class Vis(QWidget):
         self.iren.GetRenderWindow().Render()
 
         # renderWindow.SetWindowName('PhysiCell model')
-        self.ren.GetActiveCamera().ParallelProjectionOn()
+        self.ren0.GetActiveCamera().ParallelProjectionOn()
+        # self.ren.ResetCamera()
+
+        return
+        
+    #------------------------------------------------------------
+    # def plot_svg(self, frame, rdel=''):
+    def plot_cells3Dv2(self, frame):
+        print("plot_cells3Dv2:  self.output_dir2= ",self.output_dir2)
+        print("plot_cells3Dv2:  frame= ",frame)
+        # xml_file = Path(self.output_dir, "output00000000.xml")
+        # xml_file = "output00000000.xml"
+        base_xml_file = "output%08d.xml" % frame
+        print("plot_cells3Dv2: base_xml_file = ",base_xml_file)
+
+        xml_file = Path(self.output_dir2, base_xml_file)
+        print("plot_cells3Dv2: xml_file = ",xml_file)
+
+        if not os.path.isfile(xml_file):
+            print("plot_cells3D(): file not found, return. ", xml_file)
+            return
+
+        # self.iren.ReInitialize()
+        # self.iren.GetRenderWindow().Render()
+
+        # mcds = pyMCDS_cells(xml_file, '.')  
+        mcds = pyMCDS_cells(base_xml_file, self.output_dir2)
+        # mcds = pyMCDS_cells(xml_file, 'tmpdir')  
+        print('time=', mcds.get_time())
+
+        print(mcds.data['discrete_cells'].keys())
+
+        ncells = len(mcds.data['discrete_cells']['ID'])
+        # print('total_volume= ',mcds.data['discrete_cells']['total_volume'])
+        print('total_volume= ',mcds.data['discrete_cells']['total_volume'][0:10])
+        print('ncells=', ncells)
+
+        # global xyz
+        xyz = np.zeros((ncells, 3))
+        xyz[:, 0] = mcds.data['discrete_cells']['position_x']
+        xyz[:, 1] = mcds.data['discrete_cells']['position_y']
+        xyz[:, 2] = mcds.data['discrete_cells']['position_z']
+        #xyz = xyz[:1000]
+        # print("position_x = ",xyz[:,0])
+        xmin = min(xyz[:,0])
+        xmax = max(xyz[:,0])
+        print("xmin = ",xmin)
+        print("xmax = ",xmax)
+
+        ymin = min(xyz[:,1])
+        ymax = max(xyz[:,1])
+        print("ymin = ",ymin)
+        print("ymax = ",ymax)
+
+        zmin = min(xyz[:,2])
+        zmax = max(xyz[:,2])
+        print("zmin = ",zmin)
+        print("zmax = ",zmax)
+
+        # cell_type = mcds.data['discrete_cells']['cell_type']
+        cell_custom_ID = mcds.data['discrete_cells']['cell_ID']
+        # # print(type(cell_type))
+        # # print(cell_type)
+        # unique_cell_type = np.unique(cell_type)
+        unique_cell_custom_ID = np.unique(cell_custom_ID)
+        # print("\nunique_cell_type = ",unique_cell_type )
+        # print("\nunique_cell_custom_ID = ",unique_cell_custom_ID )
+
+        #------------
+        # colors = vtkNamedColors()
+        # self.points = vtkPoints()
+        self.points.Reset()
+        # self.cellID = vtkFloatArray()
+        self.cellID.Reset()
+        # self.cellVolume = vtkFloatArray()
+        self.cellVolume.Reset()
+        for idx in range(ncells):
+            x= mcds.data['discrete_cells']['position_x'][idx]
+            y= mcds.data['discrete_cells']['position_y'][idx]
+            z= mcds.data['discrete_cells']['position_z'][idx]
+            # id = mcds.data['discrete_cells']['cell_type'][idx]
+            id = mcds.data['discrete_cells']['cell_ID'][idx]
+            self.points.InsertNextPoint(x, y, z)
+            # cellVolume.InsertNextValue(30.0)
+            self.cellID.InsertNextValue(id)
+
+        print("min (parent)cell_ID = ",min(mcds.data['discrete_cells']['cell_ID']))
+        print("max (parent)cell_ID = ",max(mcds.data['discrete_cells']['cell_ID']))
+        cell_flavor = mcds.data['discrete_cells']['cell_ID']
+        # unique_cell_flavor = np.unique(cell_flavor)
+        # print("\nunique_cell_flavor = ",unique_cell_flavor )
+
+        # self.polydata = vtkPolyData()
+        self.polydata.SetPoints(self.points)
+        # polydata.GetPointData().SetScalars(cellVolume)
+        self.polydata.GetPointData().SetScalars(self.cellID)
+
+        cellID_color_dict = {}
+        # for idx in range(ncells):
+        random.seed(42)
+        # for utype in unique_cell_type:
+        for utype in unique_cell_custom_ID:
+            # colors.InsertTuple3(0, randint(0,255), randint(0,255), randint(0,255)) # reddish
+            cellID_color_dict[utype] = [random.randint(0,255), random.randint(0,255), random.randint(0,255)]
+        # cellID_color_dict[0.0]=[255,255,0]  # yellow basement membrane
+        # cellID_color_dict[1.]=[255,255,0]  # yellow basement membrane
+        cellID_color_dict[0.]=[255,255,0]  # yellow basement membrane
+        print("color dict=",cellID_color_dict)
+
+        # self.colors = vtkUnsignedCharArray()
+        self.colors.Reset()
+        self.colors.SetNumberOfComponents(3)
+        self.colors.SetNumberOfTuples(self.polydata.GetNumberOfPoints())  # ncells
+        for idx in range(ncells):
+        # for idx in range(len(unique_cell_type)):
+            # colors.InsertTuple3(idx, randint(0,255), randint(0,255), randint(0,255)) 
+            # if idx < 5:
+                # print(idx,cellID_color_dict[cell_type[idx]])
+            # self.colors.InsertTuple3(idx, cellID_color_dict[cell_type[idx]][0], cellID_color_dict[cell_type[idx]][1], cellID_color_dict[cell_type[idx]][2])
+            self.colors.InsertTuple3(idx, cellID_color_dict[cell_custom_ID[idx]][0], cellID_color_dict[cell_custom_ID[idx]][1], cellID_color_dict[cell_custom_ID[idx]][2])
+
+        self.polydata.GetPointData().SetScalars(self.colors)
+
+        # self.sphereSource = vtkSphereSource()
+        # nres = 20
+        # self.sphereSource.SetPhiResolution(nres)
+        # self.sphereSource.SetThetaResolution(nres)
+        # self.sphereSource.SetRadius(0.1)
+
+        # self.glyph = vtkGlyph3D()
+        self.glyph.SetSourceConnection(self.sphereSource.GetOutputPort())
+        self.glyph.SetInputData(self.polydata)
+        self.glyph.SetColorModeToColorByScalar()
+        # glyph.SetScaleModeToScaleByScalar()
+
+        # using these 2 results in fixed size spheres
+        self.glyph.SetScaleModeToDataScalingOff()  # results in super tiny spheres without 'ScaleFactor'
+        # self.glyph.SetScaleFactor(170)  # overall (multiplicative) scaling factor
+
+        # glyph.SetScaleModeToDataScalingOn()
+        # glyph.ScalingOn()
+        self.glyph.Update()
+
+        # Visualize
+        # self.cells_mapper = vtkPolyDataMapper()
+        # self.cells_mapper.SetInputConnection(self.glyph.GetOutputPort())
+        self.cells_mapper.Update()
+
+        self.iren.GetRenderWindow().Render()
+
+        # renderWindow.SetWindowName('PhysiCell model')
+        self.ren1.GetActiveCamera().ParallelProjectionOn()
         # self.ren.ResetCamera()
 
         return
