@@ -3,11 +3,12 @@
 #include <vector>
 #include <numeric>
 #include <algorithm> 
+#include <cmath> 
 
 int main()
 {
-    // compute closest distance on a line segment from a point (in 3D)
-    //  t = - ((x1 - x0) dot (x2 - x1)) / |x2 - x1|^2
+    // compute closest distance on a line segment, x1-x2, from a point, x0 (in 3D)
+    //  tval = - ((x1 - x0) dot (x2 - x1)) / |x2 - x1|^2
     // point
     std::vector<double> x0{50., -42., 100.};
 
@@ -45,7 +46,22 @@ int main()
     double xp = x1[0] + tval * (x2[0] - x1[0]);
     double yp = x1[1] + tval * (x2[1] - x1[1]);
     double zp = x1[2] + tval * (x2[2] - x1[2]);
-    std::cout << "pt on line seg = " << xp << ", " << yp << ", " << zp << std::endl;
+    std::cout << "xp: pt on line seg = " << xp << ", " << yp << ", " << zp << std::endl;
+
+    std::vector<double> xpv={x0[0]-xp, x0[1]-yp, x0[2]-zp};
+    std::cout << "xpv: xp -> x0 = " << xpv[0] << ", " << xpv[1] << ", " << xpv[2] << std::endl;
+
+    double xpvdist = std::sqrt(xpv[0]*xpv[0] + xpv[1]*xpv[1] + xpv[2]*xpv[2]); 
+    std::cout << "dist(xp-x0) = " << xpvdist << std::endl;
+
+    std::vector<double> xpvu={xpv[0]/xpvdist, xpv[1]/xpvdist, xpv[2]/xpvdist};
+    std::cout << "xpvu: unit vec xp -> x0 = " << xpvu[0] << ", " << xpvu[1] << ", " << xpvu[2] << std::endl;
+
+    double R_cyl = 400.0;
+    std::vector<double> xpcyl={xpvu[0]*R_cyl, xpvu[1]*R_cyl, xpvu[2]*R_cyl};
+    std::cout << "xpcyl = " << xpcyl[0] << ", " << xpcyl[1] << ", " << xpcyl[2] << std::endl;
+
+    // std::cout << "normalized = " << xp << ", " << yp << ", " << zp << std::endl;
     
     // std::cout << "x1 = " << x1 << '\n';
     // std::cout << "x2 = " << x2 << '\n';
