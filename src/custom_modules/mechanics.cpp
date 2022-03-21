@@ -1,9 +1,15 @@
 #include "./mechanics.h"
 
+#include <numeric>
+#include <algorithm> 
+#include <cmath> 
+
 void parietal_epithelial_mechanics( Cell* pCell, Phenotype& phenotype, double dt )
 {
     static double R_a = parameters.doubles("R_a");  
-    static int idx_attached = pCell->custom_data.find_variable_index( "attached" ); 
+    static int idx_attached = pCell->custom_data.find_variable_index( "attached" );
+    static int idx_attach_time = pCell->custom_data.find_variable_index( "attach_time" ); 
+    static double max_attach_time = parameters.doubles("max_attach_time");  
     static bool first_time = true;
 
     static double x_min = microenvironment.mesh.bounding_box[0]; 
@@ -20,28 +26,104 @@ void parietal_epithelial_mechanics( Cell* pCell, Phenotype& phenotype, double dt
     double ypos = pCell->position[1];
     double zpos = pCell->position[2];
 
-    if (zpos >= 0)
-        pCell->phenotype.motility.migration_bias_direction.assign({ 0.,0., -1.} ); //rwh
-    else
-        pCell->phenotype.motility.migration_bias_direction.assign({ 0.,0., 1.} ); //rwh
+    // std::vector<double> x0{50., -42., 100.};
+    std::vector<double> x0{xpos, ypos, zpos};   // x0 = cell's position
 
-    if (!(pCell->custom_data[idx_attached]))
+    // line segment (axis of cylinder)
+    // std::vector<double> x1{0., -400., 300.};
+    // std::vector<double> x2{0., 400., 300.};
+    std::vector<double> x1{0., -400., 0.};
+    std::vector<double> x2{0., 400., 0.};
+    // std::cout << "x0 = ";
+    // for (auto v: x0) std::cout << v << ' '; std::cout << std::endl;
+    // std::cout << "x1 = ";
+    // for (auto v: x1) std::cout << v << ' '; std::cout << std::endl;
+    // std::cout << "x2 = ";
+    // for (auto v: x2) std::cout << v << ' '; std::cout << std::endl;
+
+    std::vector<double> x1m0 = x1;
+    std::transform(x1.begin(),x1.end(), x0.begin(),x1m0.begin(), std::minus<double>());
+    // std::cout << "x1m0: " << std::endl;
+    // for (auto v: x1m0) std::cout << v << ' '; std::cout << std::endl;
+
+    std::vector<double> x2m1 = x1;
+    std::transform(x2.begin(),x2.end(), x1.begin(),x2m1.begin(), std::minus<double>());
+    // std::cout << "x2m1: " << std::endl;
+    // for (auto v: x2m1) std::cout << v << ' '; std::cout << std::endl;
+
+
+    //  t = - ((x1 - x0) dot (x2 - x1)) / |x2 - x1|^2
+    double numer = std::inner_product(x1m0.begin(), x1m0.end(), x2m1.begin(), 0);
+    double xv = x2m1[0];
+    double yv = x2m1[1];
+    double zv = x2m1[2];
+    double denom = xv*xv + yv*yv + zv*zv;
+    double tval = -numer / denom;
+    // std::cout << "tval= " << tval << std::endl;
+
+    // xp = nearest point on cyl axis to cell
+    double xp = x1[0] + tval * (x2[0] - x1[0]);
+    double yp = x1[1] + tval * (x2[1] - x1[1]);
+    double zp = x1[2] + tval * (x2[2] - x1[2]);
+    // std::cout << "xp: pt on line seg = " << xp << ", " << yp << ", " << zp << std::endl;
+
+    std::vector<double> xpv={x0[0]-xp, x0[1]-yp, x0[2]-zp};  // xpv (vector) = xp -> cell pos(x0)
+    // std::cout << "xpv: xp -> x0 = " << xpv[0] << ", " << xpv[1] << ", " << xpv[2] << std::endl;
+
+    double xpvdist = std::sqrt(xpv[0]*xpv[0] + xpv[1]*xpv[1] + xpv[2]*xpv[2]); 
+    // std::cout << "dist(xp-x0) = " << xpvdist << std::endl;
+
+    std::vector<double> xpvu={xpv[0]/xpvdist, xpv[1]/xpvdist, xpv[2]/xpvdist};  // normalize
+    // std::cout << "xpvu: unit vec xp -> x0 = " << xpvu[0] << ", " << xpvu[1] << ", " << xpvu[2] << std::endl;
+
+    static double R_cyl = 80.0;
+    // static double R_cyl2 = R_cyl*R_cyl;
+    std::vector<double> xpcyl={xpvu[0]*R_cyl, xpvu[1]*R_cyl, xpvu[2]*R_cyl};  // projected pt on the cyl
+
+    // double xpcyl_dist = std::sqrt(xpcyl[0]*xpcyl[0] + xpcyl[1]*xpcyl[1] + xpcyl[2]*xpcyl[2]);
+    // std::cout << "xpcyl = " << xpcyl[0] << ", " << xpcyl[1] << ", " << xpcyl[2] << std::endl;
+
+    pCell->phenotype.motility.migration_bias_direction.assign({ xpvu[0], xpvu[1], xpvu[2]} );
+
+    // if (xpcyl_dist > R_cyl)
+
+    // rwh (3/21/22): don't want to have cells outside the cyl go toward it; just 1-way travel
+    // if (xpvdist > R_cyl)
+    //     pCell->phenotype.motility.migration_bias_direction.assign({ -xpvu[0], -xpvu[1], -xpvu[2]} ); //rwh
+    // else
+    //     pCell->phenotype.motility.migration_bias_direction.assign({ xpvu[0], xpvu[1], xpvu[2]} ); //rwh
+    pCell->phenotype.motility.migration_bias_direction.assign({ xpvu[0], xpvu[1], xpvu[2]} ); //rwh
+
+    // if (!(pCell->custom_data[idx_attached]))  // this cell is NOT attached to the membrane
+    if (pCell->custom_data[idx_attached] == 0.0)  // not attached (custom_data are double (or std::string))
     {
-        // if (fabs(ypos) <  R_a)
-        if (fabs(zpos) <  R_a)
+        // if (fabs(zpos) <  R_a)
+        if (fabs(xpvdist - R_cyl) <  R_a)  // is this cell "on" the membrane?
         {
-            pCell->custom_data[idx_attached] = 1;
+            pCell->custom_data[idx_attached] = 1.0;
+            pCell->custom_data[idx_attach_time] = PhysiCell_globals.current_time;
             // phenotype.motility.migration_speed = 0.0;
 		    // phenotype.motility.is_motile = false; 
-		    pCell->is_movable = false; 
-		    pCell->is_movable = true; 
 
+		    pCell->is_movable = false; 
             return;
         }
     }
     else  //  it is already attached
     {
-            return;
+        if ((PhysiCell_globals.current_time - pCell->custom_data[idx_attach_time]) > max_attach_time)
+        {
+            // std::cout << " <<-  detaching cell ID " << pCell->ID << " at time " << PhysiCell_globals.current_time << std::endl;
+            pCell->custom_data[idx_attached] = 0.0;  // mark as not attached
+		    pCell->is_movable = true; 
+
+            // xpvu={xpv[0]/xpvdist, xpv[1]/xpvdist, xpv[2]/xpvdist};  // normalize
+            // xpvu *= R_a;
+            // xpvu[0] *= 10.0;
+            // xpvu[1] *= 10.0;
+            // xpvu[2] *= 10.0;
+        }
+            // return;
     }
 
     // if (first_time) 
@@ -65,23 +147,23 @@ void parietal_epithelial_mechanics( Cell* pCell, Phenotype& phenotype, double dt
     // adopted from update_motility_vector (in core/PhysiCell_cell.cpp)
 
     // choose a uniformly random unit vector 
-    double temp_angle = 6.28318530717959 * UniformRandom();
-    double temp_phi = 3.1415926535897932384626433832795 * UniformRandom();
+    // double temp_angle = 6.28318530717959 * UniformRandom();
+    // double temp_phi = 3.1415926535897932384626433832795 * UniformRandom();
     
-    double sin_phi = sin(temp_phi);
-    double cos_phi = cos(temp_phi);
+    // double sin_phi = sin(temp_phi);
+    // double cos_phi = cos(temp_phi);
     
-    if( phenotype.motility.restrict_to_2D == true )
-    { 
-        sin_phi = 1.0; 
-        cos_phi = 0.0;
-    }
+    // if( phenotype.motility.restrict_to_2D == true )
+    // { 
+    //     sin_phi = 1.0; 
+    //     cos_phi = 0.0;
+    // }
     
     std::vector<double> dvec; 
     dvec.resize(3,0.0); 
-    dvec[0] = 0.0; 
-    dvec[1] = 0.0; 
-    dvec[2] = -1.0; //  rwh: 3D model
+    dvec[0] = xpvu[0]; 
+    dvec[1] = xpvu[1]; 
+    dvec[2] = xpvu[2];
     
     // cell_defaults.phenotype.motility.migration_bias_direction.assign({ 0.,0., -1.} ); //rwh
     // pCell->phenotype.motility.migration_bias_direction.assign({ 0.,0., -1.} ); //rwh
